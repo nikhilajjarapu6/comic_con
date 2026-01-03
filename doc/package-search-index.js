@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.comiccon"},{"l":"com.comiccon.dto"},{"l":"com.comiccon.entity"},{"l":"com.comiccon.mapper"},{"l":"com.comiccon.repository"},{"l":"com.comiccon.service"},{"l":"com.comiccon.serviceImpl"}];updateSearchResults();
