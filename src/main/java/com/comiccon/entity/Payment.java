@@ -2,6 +2,7 @@ package com.comiccon.entity;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -28,8 +29,10 @@ public class Payment {
 	private Double amount;
 	private LocalDateTime paymentTime;
 	@Enumerated(EnumType.STRING)
+	@Column(length = 30)
 	private PaymentMethod paymentMethod;
 	@Enumerated(EnumType.STRING)
+	@Column(length = 30)
 	private PaymentStatus paymentStatus;
 	private String transactionId;
 	
