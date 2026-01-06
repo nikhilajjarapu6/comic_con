@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import com.comiccon.dto.UserRequestDto;
 import com.comiccon.dto.UserResponseDto;
 import com.comiccon.entity.User;
+import com.comiccon.exceptions.ResourceAlreadyExistsException;
+import com.comiccon.exceptions.ResourceNotFoundException;
 import com.comiccon.mapper.UserMapper;
 import com.comiccon.repository.UserRepository;
 import com.comiccon.service.UserService;
@@ -33,7 +35,8 @@ public class UserServiceImpl implements UserService {
 		User user = mapper.toEntity(dto);
 		
 		if(repo.findByEmail(user.getEmail())!=null) {
-			throw new RuntimeException("Email is alredy exists");
+			throw new ResourceAlreadyExistsException("Email already exists")
+                   .addDetail("EmailId", dto.getEmail());
 		}
 //		user.setLastLogin(LocalDateTime.now());
 		return mapper.toDto(repo.save(user));
@@ -42,7 +45,8 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserResponseDto getById(Integer id) {
 		 User user = repo.findById(id)
-		    .orElseThrow(()->new RuntimeException("user not found with id "+id));
+		    .orElseThrow(()->new ResourceNotFoundException("user not found")
+		    		.addDetail("User ID:",id));
 		 return mapper.toDto(user);
 	}
 
@@ -58,7 +62,8 @@ public class UserServiceImpl implements UserService {
 	public UserResponseDto updateUser(UserRequestDto dto, Integer id) {
 		
 		User fetchedUser = repo.findById(id)
-				.orElseThrow(()->new RuntimeException("user not found with id "+id));
+				 .orElseThrow(()->new ResourceNotFoundException("user not found")
+				    		.addDetail("User ID:",id));
 		
 		//automatically updates each field
 		mapper.updateFromDto(dto, fetchedUser);
@@ -74,7 +79,8 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public void deleteUser(Integer id) {
 		User user = repo.findById(id)
-	    	.orElseThrow(()->new RuntimeException("user not found with id "+id));	
+				 .orElseThrow(()->new ResourceNotFoundException("user not found")
+				    		.addDetail("User ID:",id));
 		repo.delete(user);
 	}
 }

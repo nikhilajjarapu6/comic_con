@@ -9,8 +9,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.comiccon.exceptions.ErrorResponse.ErrorResponseBuilder;
-
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
@@ -81,7 +79,7 @@ public class GenericExceptionHandler {
 					.status(status.value())
 					.error(status.getReasonPhrase())
 					.message(exception.getMessage())
-					.details(exception.getDeatil())
+					.details(exception.getDetail())
 					.path(request.getRequestURI())
 					.build();
 		

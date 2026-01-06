@@ -11,6 +11,7 @@ import com.comiccon.dto.ItemOrderResponseDto;
 import com.comiccon.entity.Comic;
 import com.comiccon.entity.OrderItem;
 import com.comiccon.entity.Orders;
+import com.comiccon.exceptions.ResourceNotFoundException;
 import com.comiccon.mapper.ItemOrderMapper;
 import com.comiccon.repository.ComicRepository;
 import com.comiccon.repository.GenreRepository;
@@ -23,29 +24,34 @@ import jakarta.transaction.Transactional;
 @Service
 public class ItemOrderServiceImpl implements ItemOrderService {
 	
-	@Autowired
-	OrderItemRepository repo;
 	
-	@Autowired
-	ItemOrderMapper mapper;
+	private final OrderItemRepository repo;
+
+	private final ItemOrderMapper mapper;
 	
-	@Autowired
-	OrderRepository orderRepository;
+	private final OrderRepository orderRepository;
 	
-	@Autowired
-	ComicRepository comicRepository;
+	private final ComicRepository comicRepository;
 	
-	@Autowired
-	GenreRepository genreRepository;
+	public ItemOrderServiceImpl(OrderItemRepository repo, ItemOrderMapper mapper, OrderRepository orderRepository,
+			ComicRepository comicRepository) {
+		super();
+		this.repo = repo;
+		this.mapper = mapper;
+		this.orderRepository = orderRepository;
+		this.comicRepository = comicRepository;
+	}
 
 	@Override
 	@Transactional
 	public ItemOrderResponseDto saveItemOrder(ItemOrderRequestDto dto) {
 		
 		Comic comic = comicRepository.findById(dto.getComicId())
-			           .orElseThrow(()->new RuntimeException("comic was not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Comic not found")
+			    		.addDetail("comicId",dto.getComicId()));
 		Orders order = orderRepository.findById(dto.getOrderid())
-					   .orElseThrow(()->new RuntimeException("order not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Order not found")
+			    		.addDetail("orderId",dto.getOrderid()));
 		OrderItem itemOrder = mapper.toEntity(dto);
 		itemOrder.setComic(comic);
 		itemOrder.setOrder(order);
@@ -63,7 +69,8 @@ public class ItemOrderServiceImpl implements ItemOrderService {
 	@Override
 	public ItemOrderResponseDto findItemOrderById(Integer id) {
 		OrderItem orderitem = repo.findById(id)
-			.orElseThrow(()->new RuntimeException("item order was not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Order item not found")
+			    		.addDetail("orderItemId",id));
 		return mapper.toDto(orderitem);
 	}
 
@@ -71,11 +78,14 @@ public class ItemOrderServiceImpl implements ItemOrderService {
 	@Transactional
 	public ItemOrderResponseDto updateItemOrder(ItemOrderRequestDto dto, Integer id) {
 		OrderItem itemOrder = repo.findById(id)
-					.orElseThrow(() -> new RuntimeException("item order was not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Order item not found")
+			    		.addDetail("orderItemId",id));
 		Comic comic = comicRepository.findById(dto.getComicId())
-				    .orElseThrow(() -> new RuntimeException("comic was not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Comic not found")
+			    		.addDetail("comicId",dto.getComicId()));
 		Orders order = orderRepository.findById(dto.getOrderid())
-				    .orElseThrow(() -> new RuntimeException("order not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Order not found")
+			    		.addDetail("orderId",dto.getOrderid()));
 		itemOrder.setComic(comic);
 		itemOrder.setOrder(order);
 		itemOrder.setPrice(comic.getPrice()*dto.getQuantity());
@@ -87,7 +97,8 @@ public class ItemOrderServiceImpl implements ItemOrderService {
 	@Transactional
 	public void deleteItemOrder(Integer id) {
 		OrderItem orderitem = repo.findById(id)
-				.orElseThrow(()->new RuntimeException("item order was not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Order item not found")
+			    		.addDetail("orderItemId",id));
 		repo.delete(orderitem);
 	}
 	
