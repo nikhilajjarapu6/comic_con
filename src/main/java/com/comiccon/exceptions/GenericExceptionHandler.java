@@ -22,22 +22,22 @@ public class GenericExceptionHandler {
 	}
 	
 	@ExceptionHandler(BadRequestException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequestException(AppException exception,HttpServletRequest request){
+	public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException exception,HttpServletRequest request){
 		return buildResponse(exception, HttpStatus.BAD_REQUEST, request);
 	}
 	
 	@ExceptionHandler(InvalidOperationException.class)
-	public ResponseEntity<ErrorResponse> handleInvalidEx(AppException exception,HttpServletRequest request){
+	public ResponseEntity<ErrorResponse> handleInvalidEx(InvalidOperationException exception,HttpServletRequest request){
 		return buildResponse(exception, HttpStatus.UNPROCESSABLE_ENTITY, request);
 	}
 	
 	@ExceptionHandler(ResourceAlreadyExistsException.class)
-	public ResponseEntity<ErrorResponse> handleResourceAlredyExistsEx(AppException exception,HttpServletRequest request){
+	public ResponseEntity<ErrorResponse> handleResourceAlredyExistsEx(ResourceAlreadyExistsException exception,HttpServletRequest request){
 		return buildResponse(exception, HttpStatus.CONFLICT, request);
 	}
 	
 	@ExceptionHandler(ResourceNotFoundException.class)
-	public ResponseEntity<ErrorResponse> handleResourceNotFoundEx(AppException exception,HttpServletRequest request){
+	public ResponseEntity<ErrorResponse> handleResourceNotFoundEx(ResourceNotFoundException exception,HttpServletRequest request){
 		return buildResponse(exception, HttpStatus.NOT_FOUND, request);
 	}
 	
@@ -73,7 +73,7 @@ public class GenericExceptionHandler {
 	
 	
 	
-	
+	//method for building error response
 	private ResponseEntity<ErrorResponse> buildResponse(AppException exception,HttpStatus status,HttpServletRequest request){
 		
 		ErrorResponse errorResponse = ErrorResponse.builder()
