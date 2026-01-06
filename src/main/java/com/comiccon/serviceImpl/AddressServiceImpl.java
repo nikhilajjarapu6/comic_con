@@ -10,6 +10,7 @@ import com.comiccon.dto.AddressRequestDto;
 import com.comiccon.dto.AddressResponseDto;
 import com.comiccon.entity.Address;
 import com.comiccon.entity.User;
+import com.comiccon.exceptions.ResourceNotFoundException;
 import com.comiccon.mapper.AddressMapper;
 import com.comiccon.repository.AddressRepository;
 import com.comiccon.repository.UserRepository;
@@ -34,7 +35,8 @@ public class AddressServiceImpl implements AddressService{
 	public AddressResponseDto saveAddress(AddressRequestDto dto) {
 		Address address = mapper.toEntity(dto);
 		User user = repository.findById(dto.getUserId())
-				.orElseThrow(()->new RuntimeException("user not found"));
+				 .orElseThrow(()->new ResourceNotFoundException("user not found")
+				    		.addDetail("User ID:",dto.getUserId()));
 		
 		address.setUser(user);
 		return mapper.toDto(repo.save(address));
@@ -50,7 +52,8 @@ public class AddressServiceImpl implements AddressService{
 	@Override
 	public AddressResponseDto findAddressById(Integer id) {
 		Address address = repo.findById(id)
-			.orElseThrow(()->new RuntimeException("address not found"));
+				 .orElseThrow(()->new ResourceNotFoundException("Address not found")
+				    		.addDetail("Address ID:",id));
 		return mapper.toDto(address);
 		
 	}
@@ -59,9 +62,11 @@ public class AddressServiceImpl implements AddressService{
 	@Transactional
 	public AddressResponseDto updateAddress(AddressRequestDto dto, Integer id) {
 		Address address = repo.findById(id)
-				.orElseThrow(()->new RuntimeException("address not found"));
+				 .orElseThrow(()->new ResourceNotFoundException("Address not found")
+				    		.addDetail("Address ID:",id));
 		User user = repository.findById(dto.getUserId())
-				.orElseThrow(()->new RuntimeException("user not found"));
+				 .orElseThrow(()->new ResourceNotFoundException("user not found")
+				    		.addDetail("User ID:",id));
 		address.setUser(user);
 		mapper.updateFromDto(dto, address);
 		
@@ -72,7 +77,8 @@ public class AddressServiceImpl implements AddressService{
 	@Transactional
 	public void deleteAddress(Integer id) {
 		Address address = repo.findById(id)
-				.orElseThrow(()->new RuntimeException("address not found"));
+				 .orElseThrow(()->new ResourceNotFoundException("Address not found")
+				    		.addDetail("Address ID:",id));
 		repo.delete(address);
 		
 	}

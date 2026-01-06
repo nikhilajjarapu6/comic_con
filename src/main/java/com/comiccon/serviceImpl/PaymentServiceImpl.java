@@ -11,6 +11,7 @@ import com.comiccon.dto.PaymentRequestDto;
 import com.comiccon.dto.PaymentResponseDto;
 import com.comiccon.entity.Orders;
 import com.comiccon.entity.Payment;
+import com.comiccon.exceptions.ResourceNotFoundException;
 import com.comiccon.mapper.PaymentMapper;
 import com.comiccon.repository.OrderRepository;
 import com.comiccon.repository.PaymentRepository;
@@ -21,21 +22,26 @@ import jakarta.transaction.Transactional;
 @Service
 public class PaymentServiceImpl implements PaymentService {
 	
-	@Autowired
-	PaymentRepository repo;
+	private final PaymentRepository repo;
+	private final OrderRepository orderRepository;
+	private final PaymentMapper mapper;
 	
-	@Autowired
-	OrderRepository orderRepository;
 	
-	@Autowired
-	PaymentMapper mapper;
+
+	public PaymentServiceImpl(PaymentRepository repo, OrderRepository orderRepository, PaymentMapper mapper) {
+		super();
+		this.repo = repo;
+		this.orderRepository = orderRepository;
+		this.mapper = mapper;
+	}
 
 	@Override
 	@Transactional
 	public PaymentResponseDto addPayment(PaymentRequestDto dto) {
 		
 		Orders order = orderRepository.findById(dto.getOrderId())
-					   .orElseThrow(()->new RuntimeException("order not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Order not found")
+			    		.addDetail("orderId",dto.getOrderId()));
 		Payment payment = mapper.toEntity(dto);
 		payment.setPaymentTime(LocalDateTime.now());
 		payment.setOrder(order);
@@ -54,7 +60,8 @@ public class PaymentServiceImpl implements PaymentService {
 	@Override
 	public PaymentResponseDto findPaymentById(Integer id) {
 		Payment payment = repo.findById(id)
-			.orElseThrow(()->new RuntimeException("payment not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Payment not found")
+			    		.addDetail("paymentId",id));
 		
 		
 		return mapper.toDto(payment);
@@ -64,10 +71,12 @@ public class PaymentServiceImpl implements PaymentService {
 	@Transactional
 	public PaymentResponseDto updatePayment(PaymentRequestDto dto, Integer id) {
 		 Payment payment = repo.findById(id)
-	                .orElseThrow(() -> new RuntimeException("payment not found"));
+				 .orElseThrow(()->new ResourceNotFoundException("Payment not found")
+				    		.addDetail("paymentId",id));
 
 	    Orders order = orderRepository.findById(dto.getOrderId())
-	                .orElseThrow(() -> new RuntimeException("order not found"));
+	    		.orElseThrow(()->new ResourceNotFoundException("Order not found")
+			    		.addDetail("orderId",dto.getOrderId()));
 
 	    payment.setOrder(order); // set new/updated order
 	    payment.setPaymentTime(LocalDateTime.now());
@@ -80,7 +89,8 @@ public class PaymentServiceImpl implements PaymentService {
 	@Transactional
 	public void deletePayment(Integer id) {
 		Payment payment = repo.findById(id)
-				.orElseThrow(()->new RuntimeException("payment not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Payment not found")
+			    		.addDetail("paymentId",id));
 		repo.delete(payment);
 	}
 }

@@ -12,6 +12,7 @@ import com.comiccon.entity.Cart;
 import com.comiccon.entity.CartItem;
 import com.comiccon.entity.Comic;
 import com.comiccon.entity.User;
+import com.comiccon.exceptions.ResourceNotFoundException;
 import com.comiccon.mapper.CartMapper;
 import com.comiccon.repository.CartItemRepository;
 import com.comiccon.repository.CartRepository;
@@ -24,35 +25,35 @@ import jakarta.transaction.Transactional;
 @Service
 public class CartServiceImpl implements CartService {
 	
-	@Autowired
-	CartRepository repo;
+
+	private final CartRepository repo;
+	private final UserRepository userRepository;
+	private final ComicRepository comicRepository;
+	private final CartMapper mapper;
 	
-	@Autowired
-	UserRepository userRepository;
 	
-	@Autowired
-	CartItemRepository itemRepository;
-	
-	@Autowired
-	CartRepository cartRepository;
-	
-	@Autowired
-	ComicRepository comicRepository;
-	
-	@Autowired
-	CartMapper mapper;
+
+	public CartServiceImpl(CartRepository repo, UserRepository userRepository,ComicRepository comicRepository, CartMapper mapper) {
+		super();
+		this.repo = repo;
+		this.userRepository = userRepository;
+		this.comicRepository = comicRepository;
+		this.mapper = mapper;
+	}
 
 	@Override
 	@Transactional
 	public CartResponseDto addcart(CartRequestDto dto) {
 		Cart cart = mapper.toEntity(dto);
 		User user = userRepository.findById(dto.getUserId())
-					.orElseThrow(()->new RuntimeException("user not found"));
+				.orElseThrow(()->new ResourceNotFoundException("User not found")
+			    		.addDetail("userId",dto.getUserId()));
 		
 		List<CartItem> cartItems = dto.getItems().stream()
 	            .map(cartItemDto -> {
 	                Comic comic = comicRepository.findById(cartItemDto.getComicId())
-	                        .orElseThrow(() -> new RuntimeException("comic not found"));
+	                		.orElseThrow(()->new ResourceNotFoundException("Comic not found")
+	        			    		.addDetail("comicId",cartItemDto.getComicId()));
 
 	                return CartItem.builder()
 	                        .comic(comic)
@@ -63,7 +64,7 @@ public class CartServiceImpl implements CartService {
 		cart.setItems(cartItems);
 		cart.setUser(user);
 		
-		return mapper.toDto(cartRepository.save(cart));
+		return mapper.toDto(repo.save(cart));
 	}
 
 	@Override
@@ -77,7 +78,8 @@ public class CartServiceImpl implements CartService {
 	@Override
 	public CartResponseDto findCartById(Integer id) {
 		Cart cart = repo.findById(id)
-			.orElseThrow(()->new RuntimeException("cart not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Cart not found")
+			    		.addDetail("cartId",id));
 		return mapper.toDto(cart);
 	}
 
@@ -85,12 +87,14 @@ public class CartServiceImpl implements CartService {
 	@Override
 	public CartResponseDto updateCart(CartRequestDto dto, Integer id) {
 	    Cart cart = repo.findById(id)
-	        .orElseThrow(() -> new RuntimeException("cart not found"));
+	    		.orElseThrow(()->new ResourceNotFoundException("Cart not found")
+			    		.addDetail("cartId",id));
 
 	    mapper.updateFromDto(dto, cart);
 
 	    User user = userRepository.findById(dto.getUserId())
-	        .orElseThrow(() -> new RuntimeException("user not found"));
+	    		 .orElseThrow(()->new ResourceNotFoundException("user not found")
+	 		    		.addDetail("User ID:",dto.getUserId()));
 	    cart.setUser(user);
 
 	    // Modify existing list, don't replace
@@ -99,7 +103,8 @@ public class CartServiceImpl implements CartService {
 
 	    List<CartItem> newItems = dto.getItems().stream().map(cartItemDto -> {
 	        Comic comic = comicRepository.findById(cartItemDto.getComicId())
-	            .orElseThrow(() -> new RuntimeException("comic not found"));
+	        		.orElseThrow(()->new ResourceNotFoundException("Comic not found")
+    			    		.addDetail("comicId",cartItemDto.getComicId()));
 
 	        return CartItem.builder()
 	            .comic(comic)
@@ -119,7 +124,8 @@ public class CartServiceImpl implements CartService {
 	@Transactional
 	public void deleteCart(Integer id) {
 		Cart cart = repo.findById(id)
-				.orElseThrow(()->new RuntimeException("cart not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Cart not found")
+			    		.addDetail("cartId",id));
 		repo.delete(cart);
 		
 	}

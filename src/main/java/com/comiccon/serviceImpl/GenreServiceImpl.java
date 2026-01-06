@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.comiccon.dto.GenreRequestDto;
 import com.comiccon.dto.GenreResponseDto;
 import com.comiccon.entity.Genre;
+import com.comiccon.exceptions.ResourceNotFoundException;
 import com.comiccon.mapper.GenreMapper;
 import com.comiccon.repository.GenreRepository;
 import com.comiccon.service.GenreService;
@@ -18,12 +19,16 @@ import jakarta.transaction.Transactional;
 @Service
 public class GenreServiceImpl implements GenreService {
 	
-	@Autowired
-	GenreRepository repo;
+	private final GenreRepository repo;
+	private final GenreMapper mapper;
 	
-	@Autowired
-	GenreMapper mapper;
   
+	public GenreServiceImpl(GenreRepository repo, GenreMapper mapper) {
+		super();
+		this.repo = repo;
+		this.mapper = mapper;
+	}
+
 	@Override
 	@Transactional
 	public GenreResponseDto addGenre(GenreRequestDto dto) {
@@ -41,7 +46,8 @@ public class GenreServiceImpl implements GenreService {
 	@Override
 	public GenreResponseDto getGenreById(Integer id) {
 		Genre genre = repo.findById(id)
-			.orElseThrow(()->new RuntimeException("genre not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Genre not found")
+			    		.addDetail("genreId",id));
 		return mapper.toDto(genre);
 	}
 
@@ -49,7 +55,8 @@ public class GenreServiceImpl implements GenreService {
 	@Transactional
 	public GenreResponseDto updateGenre(GenreRequestDto dto, Integer id) {
 		Genre genre =repo.findById(id)
-					.orElseThrow(()->new RuntimeException("genre not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Genre not found")
+			    		.addDetail("genreId",id));
 		mapper.updateFromDto(dto, genre);
 		
 		return mapper.toDto(repo.save(genre));
@@ -58,7 +65,8 @@ public class GenreServiceImpl implements GenreService {
 	@Override
 	public void deleteGenre(Integer id) {
 		Genre genre =repo.findById(id)
-				.orElseThrow(()->new RuntimeException("genre not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Genre not found")
+			    		.addDetail("genreId",id));
 		repo.delete(genre);
 	}
 

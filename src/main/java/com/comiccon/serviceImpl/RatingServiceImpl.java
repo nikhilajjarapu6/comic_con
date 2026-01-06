@@ -10,6 +10,7 @@ import com.comiccon.dto.RatingRequestDto;
 import com.comiccon.dto.RatingResponseDto;
 import com.comiccon.entity.Comic;
 import com.comiccon.entity.Rating;
+import com.comiccon.exceptions.ResourceNotFoundException;
 import com.comiccon.mapper.RatingMapper;
 import com.comiccon.repository.ComicRepository;
 import com.comiccon.repository.RatingRepository;
@@ -20,21 +21,27 @@ import jakarta.transaction.Transactional;
 @Service
 public class RatingServiceImpl implements RatingService {
 		
-	@Autowired
-	RatingRepository repo;
+
+	private final RatingRepository repo;
+	private final ComicRepository comicRepository;
+	private final RatingMapper mapper;
 	
-	@Autowired
-	ComicRepository comicRepository;
 	
-	@Autowired
-	RatingMapper mapper;
+
+	public RatingServiceImpl(RatingRepository repo, ComicRepository comicRepository, RatingMapper mapper) {
+		super();
+		this.repo = repo;
+		this.comicRepository = comicRepository;
+		this.mapper = mapper;
+	}
 
 	@Override
 	@Transactional
 	public RatingResponseDto saveRatings(RatingRequestDto dto) {
 		Rating rating = mapper.toEntity(dto);
 		Comic comic = comicRepository.findById(dto.getComicId())
-					.orElseThrow(()->new RuntimeException("comic not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Comic not found")
+			    		.addDetail("comicId",dto.getComicId()));
 		rating.setComic(comic);
 		return mapper.toDto(repo.save(rating));
 	}
@@ -50,7 +57,8 @@ public class RatingServiceImpl implements RatingService {
 	@Override
 	public RatingResponseDto findRatingById(Integer id) {
 		Rating rating = repo.findById(id)
-			.orElseThrow(()->new RuntimeException("rating was not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Ratings not found")
+			    		.addDetail("ratingsId",id));
 		return mapper.toDto(rating);
 	}
 
@@ -58,9 +66,11 @@ public class RatingServiceImpl implements RatingService {
 	@Transactional
 	public RatingResponseDto updateRating(RatingRequestDto dto, Integer id) {
 		Rating rating = repo.findById(id)
-				.orElseThrow(()->new RuntimeException("rating was not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Ratings not found")
+			    		.addDetail("ratingsId",id));
 		 Comic comic = comicRepository.findById(dto.getComicId())
-			.orElseThrow(()->new RuntimeException("comic not found"));
+				 .orElseThrow(()->new ResourceNotFoundException("Comic not found")
+ 			    		.addDetail("comicId",dto.getComicId()));
 		 rating.setComic(comic);
 		 mapper.updateFromDto(dto, rating);
 		 
@@ -71,7 +81,8 @@ public class RatingServiceImpl implements RatingService {
 	@Transactional
 	public void deleteRating(Integer id) {
 		Rating rating = repo.findById(id)
-				.orElseThrow(()->new RuntimeException("rating was not found"));
+				.orElseThrow(()->new ResourceNotFoundException("Ratings not found")
+			    		.addDetail("ratingsId",id));
 		repo.delete(rating);
 		
 	}

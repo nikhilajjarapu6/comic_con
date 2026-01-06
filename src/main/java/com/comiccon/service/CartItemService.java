@@ -9,6 +9,6 @@ public interface CartItemService {
 	CartItemResponseDto saveCartItem(CartItemRequestDto dto);
 	List<CartItemResponseDto> listOfCartItems();
 	CartItemResponseDto findCartItemById(Integer id);
-	CartItemResponseDto updateCartItem(CartItemResponseDto dto, Integer id);
+	CartItemResponseDto updateCartItem(CartItemRequestDto dto, Integer id);
 	void deleteCartItem(Integer id);
 }
