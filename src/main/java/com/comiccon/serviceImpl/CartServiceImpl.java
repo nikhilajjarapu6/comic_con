@@ -12,6 +12,8 @@ import com.comiccon.entity.Cart;
 import com.comiccon.entity.CartItem;
 import com.comiccon.entity.Comic;
 import com.comiccon.entity.User;
+import com.comiccon.exceptions.BadRequestException;
+import com.comiccon.exceptions.BadRequestException;
 import com.comiccon.exceptions.ResourceNotFoundException;
 import com.comiccon.mapper.CartMapper;
 import com.comiccon.repository.CartItemRepository;
@@ -49,11 +51,17 @@ public class CartServiceImpl implements CartService {
 				.orElseThrow(()->new ResourceNotFoundException("User not found")
 			    		.addDetail("userId",dto.getUserId()));
 		
+		
 		List<CartItem> cartItems = dto.getItems().stream()
 	            .map(cartItemDto -> {
 	                Comic comic = comicRepository.findById(cartItemDto.getComicId())
 	                		.orElseThrow(()->new ResourceNotFoundException("Comic not found")
 	        			    		.addDetail("comicId",cartItemDto.getComicId()));
+	                if (cartItemDto.getQuantity() <= 0) {
+	                    throw new BadRequestException("Quantity must be greater than zero")
+	                            .addDetail("quantity", cartItemDto.getQuantity());
+	                }
+
 
 	                return CartItem.builder()
 	                        .comic(comic)
@@ -105,6 +113,11 @@ public class CartServiceImpl implements CartService {
 	        Comic comic = comicRepository.findById(cartItemDto.getComicId())
 	        		.orElseThrow(()->new ResourceNotFoundException("Comic not found")
     			    		.addDetail("comicId",cartItemDto.getComicId()));
+	        if (cartItemDto.getQuantity() <= 0) {
+	            throw new BadRequestException("Quantity must be greater than zero")
+	                    .addDetail("quantity", cartItemDto.getQuantity());
+	        }
+
 
 	        return CartItem.builder()
 	            .comic(comic)
