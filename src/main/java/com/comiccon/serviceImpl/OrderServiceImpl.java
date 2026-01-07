@@ -19,6 +19,8 @@ import com.comiccon.entity.OrderItem;
 import com.comiccon.entity.OrderStatus;
 import com.comiccon.entity.Orders;
 import com.comiccon.entity.User;
+import com.comiccon.exceptions.BadRequestException;
+import com.comiccon.exceptions.InvalidOperationException;
 import com.comiccon.exceptions.ResourceNotFoundException;
 import com.comiccon.mapper.OrderMapper;
 import com.comiccon.repository.AddressRepository;
@@ -57,15 +59,6 @@ public class OrderServiceImpl implements OrderService{
 		this.comicRepository = comicRepository;
 		this.mapper = mapper;
 	}
-
-
-	
-	
-	
-	
-	
-	
-
 	@Override
 	@Transactional
 	public OrderResponseDto placeOrder(OrderRequestDto dto) {
@@ -75,6 +68,10 @@ public class OrderServiceImpl implements OrderService{
 		Address address = addressRepository.findById(dto.getAddressId())
 				 .orElseThrow(()->new ResourceNotFoundException("Address not found")
 				    		.addDetail("addressId",dto.getAddressId()));
+		if (dto.getItems() == null || dto.getItems().isEmpty()) {
+		    throw new BadRequestException("Order must contain at least one item");
+		}
+
 		//request DTO have list of order item 
 		//before saving order list of items should be saved
 		//stream gives individual itemOrder request DTO
@@ -83,6 +80,12 @@ public class OrderServiceImpl implements OrderService{
 			Comic comic = comicRepository.findById(itemOrderDto.getComicId())
 					 .orElseThrow(()->new ResourceNotFoundException("Comic not found")
 					    		.addDetail("comicId",itemOrderDto.getComicId()));
+			if (itemOrderDto.getQuantity() <= 0) {
+			    throw new BadRequestException("Quantity must be greater than zero")
+			            .addDetail("comicId", itemOrderDto.getComicId())
+			            .addDetail("quantity", itemOrderDto.getQuantity());
+			}
+
 			return OrderItem.builder()
 						    .comic(comic)
 						    .quantity(itemOrderDto.getQuantity())
@@ -143,6 +146,15 @@ public class OrderServiceImpl implements OrderService{
 	    Orders existingOrder = repo.findById(id)
 	    		.orElseThrow(()->new ResourceNotFoundException("Order not found")
 			    		.addDetail("orderId",id));
+	    
+	    if (existingOrder.getOrderStatus() == OrderStatus.CANCELLED ||
+	    	    existingOrder.getOrderStatus() == OrderStatus.DELIVERED) {
+
+	    	    throw new InvalidOperationException("Order cannot be modified in current state")
+	    	            .addDetail("orderId", existingOrder.getId())
+	    	            .addDetail("status", existingOrder.getOrderStatus());
+	    	}
+
 
 
 	    Address address = addressRepository.findById(dto.getAddressId())
@@ -158,7 +170,9 @@ public class OrderServiceImpl implements OrderService{
 	            .stream()
 	            .collect(Collectors.toMap(Comic::getId, Function.identity()));
 
-	    List<OrderItem> items = new ArrayList<>();
+	    List<OrderItem> existingItems = existingOrder.getItems();
+	    existingItems.clear();
+//	    List<OrderItem> items = new ArrayList<>();
 	    double total = 0;
 
 	    for (ItemOrderRequestDto itemDto : dto.getItems()) {
@@ -167,6 +181,11 @@ public class OrderServiceImpl implements OrderService{
 	        if (comic == null) {
 	            throw new ResourceNotFoundException("comic not found")
 	            .addDetail("comicId", itemDto.getComicId());
+	        }
+	        if (itemDto.getQuantity() <= 0) {
+	            throw new BadRequestException("Quantity must be greater than zero")
+	                    .addDetail("comicId", itemDto.getComicId())
+	                    .addDetail("quantity", itemDto.getQuantity());
 	        }
 
 	        double price = comic.getPrice() * itemDto.getQuantity();
@@ -179,11 +198,11 @@ public class OrderServiceImpl implements OrderService{
 	                .order(existingOrder)
 	                .build();
 
-	        items.add(item);
+	        existingItems.add(item);
 	    }
 
 	    existingOrder.setAddress(address);
-	    existingOrder.setItems(items);
+	    existingOrder.setItems(existingItems);
 	    existingOrder.setTotalAmount(total);
 	    existingOrder.setOrderStatus(OrderStatus.CONFIRMED);
 	    // existingOrder.setUpdatedAt(LocalDateTime.now()); // better
@@ -198,6 +217,12 @@ public class OrderServiceImpl implements OrderService{
 		Orders order = repo.findById(id)
 				.orElseThrow(()->new ResourceNotFoundException("Order not found")
 			    		.addDetail("orderId",id));
+		if (order.getOrderStatus() != OrderStatus.CANCELLED) {
+		    throw new InvalidOperationException("Only cancelled orders can be deleted")
+		            .addDetail("orderId", order.getId())
+		            .addDetail("status", order.getOrderStatus());
+		}
+
 		repo.delete(order);
 		
 	}
